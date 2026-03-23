@@ -86,6 +86,7 @@ class ClaudeCLIChatModel(BaseChatModel):
     """LangChain ChatModel that shells out to the Claude CLI."""
 
     cli_path: str = os.path.expanduser("~/.local/bin/claude")
+    model_name: Optional[str] = None
     timeout: int = 300
     tools: List[Any] = []
 
@@ -108,9 +109,14 @@ class ClaudeCLIChatModel(BaseChatModel):
     ) -> ChatResult:
         prompt = self._messages_to_prompt(messages)
 
+        cmd = [self.cli_path, "--print", "--output-format", "text"]
+        if self.model_name:
+            cmd.extend(["--model", self.model_name])
+        cmd.extend(["-p", prompt])
+
         try:
             result = subprocess.run(
-                [self.cli_path, "--print", "--output-format", "text", "-p", prompt],
+                cmd,
                 capture_output=True,
                 text=True,
                 timeout=self.timeout,
@@ -186,9 +192,13 @@ class ClaudeCLIClient(BaseLLMClient):
             "claude_cli_path",
             os.path.expanduser("~/.local/bin/claude"),
         )
-        timeout = self.kwargs.get("claude_cli_timeout", 120)
+        timeout = self.kwargs.get("claude_cli_timeout", 300)
 
-        return ClaudeCLIChatModel(cli_path=cli_path, timeout=timeout)
+        return ClaudeCLIChatModel(
+            cli_path=cli_path,
+            model_name=self.model,
+            timeout=timeout,
+        )
 
     def validate_model(self) -> bool:
         """Claude CLI uses whatever model the user has configured; always valid."""

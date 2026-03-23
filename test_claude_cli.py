@@ -3,8 +3,8 @@ from tradingagents.default_config import DEFAULT_CONFIG
 
 config = DEFAULT_CONFIG.copy()
 config["llm_provider"] = "claude_cli"
-config["deep_think_llm"] = "claude-sonnet-4-20250514"
-config["quick_think_llm"] = "claude-sonnet-4-20250514"
+config["deep_think_llm"] = "claude-opus-4-6"       # Research manager, portfolio manager
+config["quick_think_llm"] = "claude-sonnet-4-6"    # Analysts, debaters, trader
 config["max_debate_rounds"] = 1
 config["max_risk_discuss_rounds"] = 1
 config["max_recur_limit"] = 150  # higher limit for CLI overhead
