@@ -131,7 +131,10 @@ class TradingAgentsGraph:
         self.log_states_dict = {}  # date to full state dict
 
         # Set up the graph
-        self.graph = self.graph_setup.setup_graph(selected_analysts)
+        parallel_analysts = self.config.get("parallel_analysts", True)
+        self.graph = self.graph_setup.setup_graph(
+            selected_analysts, parallel_analysts=parallel_analysts
+        )
 
     def _get_provider_kwargs(self) -> Dict[str, Any]:
         """Get provider-specific kwargs for LLM client creation."""
@@ -152,6 +155,14 @@ class TradingAgentsGraph:
             effort = self.config.get("anthropic_effort")
             if effort:
                 kwargs["effort"] = effort
+
+        elif provider == "claude_cli":
+            cli_path = self.config.get("claude_cli_path")
+            if cli_path:
+                kwargs["claude_cli_path"] = cli_path
+            cli_timeout = self.config.get("claude_cli_timeout")
+            if cli_timeout:
+                kwargs["claude_cli_timeout"] = cli_timeout
 
         return kwargs
 
