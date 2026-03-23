@@ -86,7 +86,7 @@ class ClaudeCLIChatModel(BaseChatModel):
     """LangChain ChatModel that shells out to the Claude CLI."""
 
     cli_path: str = os.path.expanduser("~/.local/bin/claude")
-    timeout: int = 120
+    timeout: int = 300
     tools: List[Any] = []
 
     @property

@@ -131,10 +131,7 @@ class TradingAgentsGraph:
         self.log_states_dict = {}  # date to full state dict
 
         # Set up the graph
-        parallel_analysts = self.config.get("parallel_analysts", True)
-        self.graph = self.graph_setup.setup_graph(
-            selected_analysts, parallel_analysts=parallel_analysts
-        )
+        self.graph = self.graph_setup.setup_graph(selected_analysts)
 
     def _get_provider_kwargs(self) -> Dict[str, Any]:
         """Get provider-specific kwargs for LLM client creation."""
@@ -216,12 +213,33 @@ class TradingAgentsGraph:
         if self.debug:
             # Debug mode with tracing
             trace = []
+            last_msg_id = None
             for chunk in self.graph.stream(init_agent_state, **args):
-                if len(chunk["messages"]) == 0:
-                    pass
-                else:
-                    chunk["messages"][-1].pretty_print()
-                    trace.append(chunk)
+                # Print messages only when they actually change
+                if len(chunk["messages"]) > 0:
+                    curr_msg = chunk["messages"][-1]
+                    curr_id = getattr(curr_msg, "id", id(curr_msg))
+                    if curr_id != last_msg_id:
+                        curr_msg.pretty_print()
+                        last_msg_id = curr_id
+
+                # Print non-message state changes (debate states, reports)
+                for key in ("investment_debate_state", "risk_debate_state",
+                            "final_trade_decision", "investment_plan",
+                            "trader_investment_plan"):
+                    if key in chunk and chunk[key]:
+                        if key == "risk_debate_state" and chunk[key].get("latest_speaker"):
+                            speaker = chunk[key]["latest_speaker"]
+                            if speaker == "Judge":
+                                print(f"\n{'='*40}\n📋 Portfolio Manager Decision:\n{'='*40}")
+                                print(chunk[key].get("judge_decision", "")[:500])
+                            else:
+                                print(f"\n--- {speaker} Analyst spoke (round {chunk[key].get('count', '?')}) ---")
+                        elif key == "final_trade_decision":
+                            print(f"\n{'='*40}\n🎯 Final Trade Decision:\n{'='*40}")
+                            print(str(chunk[key])[:500])
+
+                trace.append(chunk)
 
             final_state = trace[-1]
         else:
